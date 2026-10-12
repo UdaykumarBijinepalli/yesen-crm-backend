@@ -1,0 +1,59 @@
+{
+  "name": "yesen-crm-backend",
+  "version": "1.0.0",
+  "description": "Yesen Technologies — Admin Panel / CRM backend (Kanban inquiry pipeline)",
+  "main": "src/server.js",
+  "type": "module",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development nodemon src/server.js",
+    "uat": "cross-env NODE_ENV=uat node src/server.js",
+    "start": "cross-env NODE_ENV=production node src/server.js",
+    "seed": "node src/utils/seed.js",
+    "seed:dev": "cross-env NODE_ENV=development node src/utils/seed.js",
+    "seed:uat": "cross-env NODE_ENV=uat node src/utils/seed.js",
+    "seed:prod": "cross-env NODE_ENV=production node src/utils/seed.js",
+    "seed:demo": "node src/utils/seedDemo.js",
+    "seed:demo:dev": "cross-env NODE_ENV=development node src/utils/seedDemo.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:smoke": "cross-env NODE_ENV=test node smoke-test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-async-errors": "^3.1.1",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^7.1.0",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.5.1",
+    "multer": "^2.0.1",
+    "nodemailer": "^9.0.5",
+    "pino": "^9.3.2",
+    "pino-http": "^10.2.0",
+    "pino-roll": "^4.0.0",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "eslint": "^8.57.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "mongodb-memory-server": "^10.0.0",
+    "nodemon": "^3.1.4",
+    "pino-pretty": "^11.2.2",
+    "prettier": "^3.3.3",
+    "supertest": "^7.0.0"
+  }
+}

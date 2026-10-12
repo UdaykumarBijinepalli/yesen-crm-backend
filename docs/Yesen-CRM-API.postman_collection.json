@@ -1,0 +1,456 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "Yesen CRM Backend API",
+    "description": "Postman collection for the Yesen Technologies CRM backend (Kanban inquiry pipeline).\n\n**Setup**\n1. Import this collection and optionally `Yesen-CRM-Local.postman_environment.json`.\n2. Set `baseUrl` (default `http://localhost:5000`).\n3. Set `formsApiKey` to match `FORMS_API_KEY` in `.env.development`.\n4. Run **Auth → Login** — a test script saves `token` automatically.\n5. After creating an inquiry or listing the board, copy an inquiry `_id` into `inquiryId` (or use Forms → Product Inquiry which can set it from the response).\n\n**Auth**\n- Admin panel routes: `Authorization: Bearer {{token}}`\n- Public form intake: `x-forms-key: {{formsApiKey}}`\n\nPrefer `/api/v1/...` (unversioned `/api/...` also works).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" },
+    { "key": "apiVersion", "value": "v1" },
+    { "key": "token", "value": "" },
+    { "key": "formsApiKey", "value": "change_this_forms_key_min_8_chars" },
+    { "key": "inquiryId", "value": "" },
+    { "key": "documentId", "value": "" },
+    { "key": "userId", "value": "" },
+    { "key": "tag", "value": "Open" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health",
+            "description": "Liveness probe — no auth."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  if (data.token) pm.collectionVariables.set('token', data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"ChangeMe123!\"\n}"
+            },
+            "url": "{{baseUrl}}/api/{{apiVersion}}/auth/login",
+            "description": "Returns JWT. Test script stores `token` on the collection."
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/{{apiVersion}}/auth/me"
+          }
+        },
+        {
+          "name": "Change password",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"ChangeMe123!\",\n  \"newPassword\": \"ChangeMe123!\"\n}"
+            },
+            "url": "{{baseUrl}}/api/{{apiVersion}}/auth/password",
+            "description": "Self-service password change (Settings). Requires current password."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Forms (public intake)",
+      "auth": { "type": "noauth" },
+      "item": [
+        {
+          "name": "Product inquiry",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json();",
+                  "  if (data.inquiry && data.inquiry._id) {",
+                  "    pm.collectionVariables.set('inquiryId', data.inquiry._id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-forms-key", "value": "{{formsApiKey}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientName\": \"Priya Nair\",\n  \"email\": \"priya@acmeindustries.in\",\n  \"company\": \"Acme Industries\",\n  \"productOrServiceName\": \"Industrial Chiller X200\",\n  \"sourcePage\": \"/products/chiller-x200\",\n  \"message\": \"Need a quote for two chillers.\",\n  \"value\": 450000\n}"
+            },
+            "url": "{{baseUrl}}/api/{{apiVersion}}/forms/product",
+            "description": "Creates inquiry with source=product and auto-tags productOrServiceName. Saves `inquiryId`."
+          }
+        },
+        {
+          "name": "Service inquiry",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-forms-key", "value": "{{formsApiKey}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientName\": \"Rahul Menon\",\n  \"phone\": \"+919876543210\",\n  \"company\": \"Coastal Foods\",\n  \"productOrServiceName\": \"AMC Maintenance\",\n  \"sourcePage\": \"/services/amc\",\n  \"message\": \"Interested in annual maintenance for existing units.\",\n  \"value\": 85000\n}"
+            },
+            "url": "{{baseUrl}}/api/{{apiVersion}}/forms/service"
+          }
+        },
+        {
+          "name": "Contact inquiry",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-forms-key", "value": "{{formsApiKey}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientName\": \"Ananya Krishnan\",\n  \"email\": \"ananya@example.com\",\n  \"phone\": \"+919700001111\",\n  \"message\": \"General inquiry about your product range.\",\n  \"sourcePage\": \"/contact\"\n}"
+            },
+            "url": "{{baseUrl}}/api/{{apiVersion}}/forms/contact",
+            "description": "Auto-tagged as \"Open\"."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Inquiries",
+      "item": [
+        {
+          "name": "Kanban board",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/inquiries?board=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "inquiries"],
+              "query": [{ "key": "board", "value": "true" }]
+            }
+          }
+        },
+        {
+          "name": "List inquiries (filtered)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/inquiries?q=&source=&tag=&assignedTo=",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "inquiries"],
+              "query": [
+                { "key": "q", "value": "", "description": "Search name/email/phone/company/product/tags" },
+                { "key": "source", "value": "", "description": "product | service | contact" },
+                { "key": "tag", "value": "" },
+                { "key": "assignedTo", "value": "", "description": "user ObjectId or unassigned" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get inquiry detail (drawer)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/{{apiVersion}}/inquiries/{{inquiryId}}"
+          }
+        },
+        {
+          "name": "Update inquiry",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company\": \"Coastal Foods Pvt Ltd\",\n  \"value\": 90000,\n  \"assignedTo\": null\n}"
+            },
+            "url": "{{baseUrl}}/api/{{apiVersion}}/inquiries/{{inquiryId}}"
+          }
+        },
+        {
+          "name": "Move stage",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stage\": \"Contacted\"\n}"
+            },
+            "url": "{{baseUrl}}/api/{{apiVersion}}/inquiries/{{inquiryId}}/stage",
+            "description": "Stages: Inquired | Contacted | Quotation Provided | Negotiation | Completed | Lost. For Lost, optionally send lostReason."
+          }
+        },
+        {
+          "name": "Move stage to Lost",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stage\": \"Lost\",\n  \"lostReason\": \"Budget constraints\"\n}"
+            },
+            "url": "{{baseUrl}}/api/{{apiVersion}}/inquiries/{{inquiryId}}/stage"
+          }
+        },
+        {
+          "name": "Add tag",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tag\": \"{{tag}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/{{apiVersion}}/inquiries/{{inquiryId}}/tags"
+          }
+        },
+        {
+          "name": "Remove tag",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/{{apiVersion}}/inquiries/{{inquiryId}}/tags/{{tag}}"
+          }
+        },
+        {
+          "name": "Set quotation status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sent\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/{{apiVersion}}/inquiries/{{inquiryId}}/quotation"
+          }
+        },
+        {
+          "name": "Delete inquiry",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/{{apiVersion}}/inquiries/{{inquiryId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Logs",
+      "item": [
+        {
+          "name": "List logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/{{apiVersion}}/inquiries/{{inquiryId}}/logs"
+          }
+        },
+        {
+          "name": "Add log",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"note\",\n  \"message\": \"Called client; awaiting decision.\"\n}"
+            },
+            "url": "{{baseUrl}}/api/{{apiVersion}}/inquiries/{{inquiryId}}/logs",
+            "description": "type: note | call | email | whatsapp | meeting"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Documents",
+      "item": [
+        {
+          "name": "List documents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/{{apiVersion}}/inquiries/{{inquiryId}}/documents"
+          }
+        },
+        {
+          "name": "Upload document",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json();",
+                  "  if (data.document && data.document._id) {",
+                  "    pm.collectionVariables.set('documentId', data.document._id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Select a PDF/image/Word/Excel file in Postman"
+                },
+                {
+                  "key": "type",
+                  "value": "quotation",
+                  "type": "text",
+                  "description": "invoice | quotation | other"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/{{apiVersion}}/inquiries/{{inquiryId}}/documents",
+            "description": "Multipart upload. Field name must be `file`. Saves `documentId`."
+          }
+        },
+        {
+          "name": "Download document",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/{{apiVersion}}/documents/{{documentId}}/download"
+          }
+        },
+        {
+          "name": "Delete document",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/{{apiVersion}}/documents/{{documentId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users (admin only)",
+      "item": [
+        {
+          "name": "List users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/{{apiVersion}}/users",
+            "description": "Requires admin role."
+          }
+        },
+        {
+          "name": "Create user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json();",
+                  "  if (data.user && data.user._id) {",
+                  "    pm.collectionVariables.set('userId', data.user._id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Staff Member\",\n  \"username\": \"staff1\",\n  \"password\": \"StaffPass1\",\n  \"role\": \"staff\",\n  \"email\": \"staff1@yesen.local\"\n}"
+            },
+            "url": "{{baseUrl}}/api/{{apiVersion}}/users"
+          }
+        },
+        {
+          "name": "Update user",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"active\": true,\n  \"role\": \"staff\"\n}"
+            },
+            "url": "{{baseUrl}}/api/{{apiVersion}}/users/{{userId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Meta",
+      "item": [
+        {
+          "name": "Pipeline stages & sources",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/{{apiVersion}}/meta/pipeline"
+          }
+        },
+        {
+          "name": "Team roster",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/{{apiVersion}}/meta/team",
+            "description": "Active team for assignment pickers (all authenticated roles)."
+          }
+        }
+      ]
+    }
+  ]
+}

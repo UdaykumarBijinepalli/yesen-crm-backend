@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.development
+.env.uat
+.env.production
+.env.test
+!*.example
+uploads/*
+!uploads/.gitkeep
+logs/
+*.log
+coverage/
