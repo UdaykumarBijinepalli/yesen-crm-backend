@@ -10,3 +10,6 @@ uploads/*
 logs/
 *.log
 coverage/
+
+.env
+.env.production
