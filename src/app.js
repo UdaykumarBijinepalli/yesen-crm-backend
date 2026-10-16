@@ -19,6 +19,21 @@ import { uploadDir } from './middleware/upload.js';
 
 const app = express();
 
+// Add right before route definitions in src/app.js
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'UP',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+
+
+
+
+
+
 app.disable('x-powered-by');
 app.set('trust proxy', 1); // needed for correct req.ip / rate-limiting behind a reverse proxy in uat/prod
 
