@@ -1,4 +1,4 @@
-name: Deploy Yesen CRM via Ansible
+name: Deploy Backend to Worker
 
 on:
   push:
@@ -9,19 +9,18 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Trigger Ansible Deployment on Master Node
+      - name: Trigger Ansible Backend Deployment on Master
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.MASTER_HOST }}
-          username: ${{ secrets.MASTER_USER }}
+          username: ubuntu
           key: ${{ secrets.MASTER_SSH_KEY }}
           port: 22
           script_stop: true
           script: |
-            echo "Starting deployment from Master EC2..."
+            echo "Starting targeted Backend deployment..."
             export GH_PAT="${{ secrets.GH_PAT }}"
             cd /home/ubuntu
-            ansible-playbook -i inventory.ini deploy.yml -v
-            echo "Deployment finished successfully."
+            ansible-playbook -i inventory.ini deploy.yml --tags backend -v
+            echo "Backend deployment complete!"
