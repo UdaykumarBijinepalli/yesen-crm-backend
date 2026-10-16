@@ -1,26 +1,25 @@
-name: Deploy Backend to Worker
+name: Direct Backend Deploy to EC2 Minikube
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:
+    branches: [ "main", "master" ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Ansible Backend Deployment on Master
+      - name: Trigger Remote Build & Rollout on EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.MASTER_HOST }}
-          username: ubuntu
-          key: ${{ secrets.MASTER_SSH_KEY }}
-          port: 22
-          script_stop: true
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "Starting targeted Backend deployment..."
-            export GH_PAT="${{ secrets.GH_PAT }}"
-            cd /home/ubuntu
-            ansible-playbook -i inventory.ini deploy.yml --tags backend -v
-            echo "Backend deployment complete!"
+            export PATH=$PATH:/usr/local/bin:/snap/bin
+            cd ~/yesen-crm-backend
+            git reset --hard origin/main
+            git pull origin main
+            docker build -t yesen-crm-backend:latest .
+            minikube image load yesen-crm-backend:latest
+            kubectl rollout restart deployment/backend-deployment -n yesen-crm
+            kubectl rollout status deployment/backend-deployment -n yesen-crm --timeout=120s
