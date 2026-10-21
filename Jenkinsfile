@@ -1,7 +1,6 @@
 pipeline {
     agent any
     triggers {
-        // Automatically triggers the build when a push event is received from GitHub
         githubPush()
     }
     
@@ -14,20 +13,18 @@ pipeline {
 
     stages {
         stage('Checkout Both Repositories') {
-            steps {
-                parallel {
-                    stage('Checkout Backend') {
-                        steps {
-                            checkout scm
-                        }
+            parallel {
+                stage('Checkout Backend') {
+                    steps {
+                        checkout scm
                     }
-                    stage('Checkout Frontend') {
-                        steps {
-                            dir('yesen-crm-frontend') {
-                                git branch: 'main', 
-                                    url: 'https://github.com/UdaykumarBijinepalli/yesen-crm-frontend.git',
-                                    credentialsId: 'github-pat-token'
-                            }
+                }
+                stage('Checkout Frontend') {
+                    steps {
+                        dir('yesen-crm-frontend') {
+                            git branch: 'main', 
+                                url: 'https://github.com/UdaykumarBijinepalli/yesen-crm-frontend.git',
+                                credentialsId: 'github-pat-token'
                         }
                     }
                 }
