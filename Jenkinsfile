@@ -14,17 +14,21 @@ pipeline {
 
     stages {
         stage('Checkout Both Repositories') {
-            parallel {
-                stage('Checkout Backend') {
-                    steps {
-                        checkout scm
+            steps {
+                parallel {
+                    stage('Checkout Backend') {
+                        steps {
+                            checkout scm
+                        }
                     }
-                }
-                stage('Checkout Frontend') {
-                    steps {
-                        git branch: 'main', 
-                            url: 'https://github.com/UdaykumarBijinepalli/yesen-crm-frontend.git',
-                            credentialsId: 'github-pat-token'
+                    stage('Checkout Frontend') {
+                        steps {
+                            dir('yesen-crm-frontend') {
+                                git branch: 'main', 
+                                    url: 'https://github.com/UdaykumarBijinepalli/yesen-crm-frontend.git',
+                                    credentialsId: 'github-pat-token'
+                            }
+                        }
                     }
                 }
             }
@@ -60,11 +64,11 @@ pipeline {
                     export MONGODB_URI="${MONGODB_URI}"
                     export JWT_SECRET="${JWT_SECRET}"
                     
-                    # Start or restart backend via PM2
+                    # Start or restart backend directly via PM2 using server.js
                     if pm2 list | grep -q "yesen-backend"; then
                         pm2 restart yesen-backend
                     else
-                        pm2 start npm --name "yesen-backend" -- start
+                        pm2 start src/server.js --name "yesen-backend"
                     fi
 
                     # Copy frontend build files to Nginx web directory automatically
