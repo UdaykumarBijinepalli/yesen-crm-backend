@@ -1,6 +1,5 @@
 pipeline {
     agent any
-
     triggers {
         // Automatically triggers the build when a push event is received from GitHub
         githubPush()
