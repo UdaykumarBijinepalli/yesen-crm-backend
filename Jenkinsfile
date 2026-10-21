@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    triggers {
+        // Automatically triggers the build when a push event is received from GitHub
+        githubPush()
+    }
+    
     environment {
         JWT_SECRET = credentials('yesen-jwt-secret')
         MONGODB_URI = credentials('yesen-mongodb-uri')
