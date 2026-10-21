@@ -61,17 +61,17 @@ pipeline {
                     export MONGODB_URI="${MONGODB_URI}"
                     export JWT_SECRET="${JWT_SECRET}"
                     
-                    # Start or restart backend via PM2 using npm start (reads package.json entry point automatically)
+                    # Start or restart backend via PM2
                     if pm2 list | grep -q "yesen-backend"; then
                         pm2 restart yesen-backend
                     else
                         pm2 start npm --name "yesen-backend" -- start
                     fi
 
-                    # Copy frontend build files to web directory
+                    # Copy frontend build files to Nginx web directory using absolute workspace path
                     sudo mkdir -p /var/www/yesen-crm
                     sudo rm -rf /var/www/yesen-crm/*
-                    sudo cp -r yesen-crm-frontend/dist/* /var/www/yesen-crm/
+                    sudo cp -r ${WORKSPACE}/yesen-crm-frontend/dist/* /var/www/yesen-crm/
                 '''
             }
         }
