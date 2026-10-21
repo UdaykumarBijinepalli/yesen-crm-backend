@@ -57,21 +57,15 @@ pipeline {
             steps {
                 echo 'Deploying application services...'
                 sh '''
-                    # Restart backend via PM2 (Adjust path to your entry point if different, e.g., src/server.js or src/app.js)
+                    # Start or restart backend via PM2 using the correct path from root
                     export PORT=5000
                     export MONGODB_URI="${MONGODB_URI}"
                     export JWT_SECRET="${JWT_SECRET}"
                     
-                    # Check if server.js is in src/ or root
-                    ENTRY_POINT="src/server.js"
-                    if [ ! -f "$ENTRY_POINT" ]; then
-                        ENTRY_POINT="src/app.js"
-                    fi
-
                     if pm2 list | grep -q "yesen-backend"; then
                         pm2 restart yesen-backend
                     else
-                        pm2 start $ENTRY_POINT --name "yesen-backend"
+                        pm2 start src/server.js --name "yesen-backend"
                     fi
 
                     # Copy frontend build files to web directory
