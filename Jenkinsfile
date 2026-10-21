@@ -9,6 +9,9 @@ pipeline {
     environment {
         JWT_SECRET = credentials('yesen-jwt-secret')
         MONGODB_URI = credentials('yesen-mongodb-uri')
+        // Fix pnpm read-only snap error by redirecting home/store to workspace
+        PNPM_HOME = "${WORKSPACE}/.pnpm-home"
+        HOME = "${WORKSPACE}"
     }
 
     stages {
@@ -16,15 +19,13 @@ pipeline {
             parallel {
                 stage('Checkout Backend') {
                     steps {
-                        // This checks out the current backend repo where the Jenkinsfile lives
                         checkout scm
                     }
                 }
                 stage('Checkout Frontend') {
                     steps {
-                        // Replace with your actual frontend repository URL and branch
                         git branch: 'main', 
-                            url: 'https://github.com/UdaykumarBijinepalli/yesen-crm-frontend',
+                            url: 'https://github.com/UdaykumarBijinepalli/yesen-crm-frontend.git',
                             credentialsId: 'github-pat-token'
                     }
                 }
@@ -33,19 +34,22 @@ pipeline {
 
         stage('Build & Test Backend') {
             steps {
-                // Since Jenkins checks out the backend into the root workspace by default in this mode:
                 echo 'Installing backend dependencies...'
                 sh 'npm install'
                 
-                echo 'Running backend smoke tests...'
-                sh 'node smoke-test.js || true'
+                echo 'Running backend tests...'
+                // Using npm test or verifying file existence safely
+                sh 'npm test || true'
             }
         }
 
         stage('Build Frontend') {
             steps {
-                // Point to the cloned frontend folder directory
-                dir('yesen-crm-frontend-main') {
+                // Ensure the folder matches your actual frontend repo name
+                dir('yesen-crm-frontend') {
+                    echo 'Configuring pnpm environment...'
+                    sh 'mkdir -p ${PNPM_HOME}'
+                    
                     echo 'Installing frontend dependencies using pnpm...'
                     sh 'pnpm install'
                     
@@ -73,7 +77,7 @@ pipeline {
                     # Copy frontend build files to web directory
                     sudo mkdir -p /var/www/yesen-crm
                     sudo rm -rf /var/www/yesen-crm/*
-                    sudo cp -r yesen-crm-frontend-main/dist/* /var/www/yesen-crm/
+                    sudo cp -r yesen-crm-frontend/dist/* /var/www/yesen-crm/
                 '''
             }
         }
