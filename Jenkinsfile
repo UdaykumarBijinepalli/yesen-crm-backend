@@ -57,15 +57,15 @@ pipeline {
             steps {
                 echo 'Deploying application services...'
                 sh '''
-                    # Start or restart backend via PM2 using the correct path from root
                     export PORT=5000
                     export MONGODB_URI="${MONGODB_URI}"
                     export JWT_SECRET="${JWT_SECRET}"
                     
+                    # Start or restart backend via PM2 using npm start (reads package.json entry point automatically)
                     if pm2 list | grep -q "yesen-backend"; then
                         pm2 restart yesen-backend
                     else
-                        pm2 start src/server.js --name "yesen-backend"
+                        pm2 start npm --name "yesen-backend" -- start
                     fi
 
                     # Copy frontend build files to web directory
