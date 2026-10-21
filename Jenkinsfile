@@ -68,10 +68,19 @@ pipeline {
                         pm2 start npm --name "yesen-backend" -- start
                     fi
 
-                    # Copy frontend build files to Nginx web directory using absolute workspace path
+                    # Copy frontend build files to Nginx web directory automatically
                     sudo mkdir -p /var/www/yesen-crm
                     sudo rm -rf /var/www/yesen-crm/*
-                    sudo cp -r ${WORKSPACE}/yesen-crm-frontend/dist/* /var/www/yesen-crm/
+                    
+                    # Automatically find the built dist folder anywhere in the workspace and copy its contents
+                    DIST_PATH=$(find ${WORKSPACE} -type d -name "dist" | grep -v "node_modules" | head -n 1)
+                    if [ -d "$DIST_PATH" ]; then
+                        sudo cp -r ${DIST_PATH}/* /var/www/yesen-crm/
+                        echo "Frontend deployed successfully from $DIST_PATH!"
+                    else
+                        echo "Error: Frontend dist folder not found!"
+                        exit 1
+                    fi
                 '''
             }
         }
