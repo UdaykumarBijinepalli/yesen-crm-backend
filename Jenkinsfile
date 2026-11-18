@@ -16,6 +16,7 @@ pipeline {
             parallel {
                 stage('Checkout Backend') {
                     steps {
+                        // Jenkins automatically checks out the main SCM repo (backend) here
                         checkout scm
                     }
                 }
@@ -58,25 +59,27 @@ pipeline {
                 echo 'Deploying application services...'
                 sh '''
                     export PORT=5000
-                    export MONGODB_URI="${MONGODB_URI}"
+                    export MONGO_URI="${MONGODB_URI}"
                     export JWT_SECRET="${JWT_SECRET}"
+                    export FORMS_API_KEY="change_this_forms_key_min_8_chars"
                     
-                    # Start or restart backend directly via PM2 using server.js
-                    if pm2 list | grep -q "yesen-backend"; then
-                        pm2 restart yesen-backend
-                    else
-                        pm2 start src/server.js --name "yesen-backend"
-                    fi
+                    # Ensure runtime folders exist with proper permissions
+                    mkdir -p ${WORKSPACE}/uploads ${WORKSPACE}/logs
+                    chmod -R 777 ${WORKSPACE}/uploads ${WORKSPACE}/logs
 
-                    # Copy frontend build files to Nginx web directory automatically
+                    # Stop/Delete old PM2 process if running
+                    pm2 delete yesen-backend || true
+                    
+                    # Start backend via PM2 using src/server.js
+                    pm2 start src/server.js --name "yesen-backend"
+
+                    # Copy frontend build files to Nginx web directory
                     sudo mkdir -p /var/www/yesen-crm
                     sudo rm -rf /var/www/yesen-crm/*
                     
-                    # Automatically find the built dist folder anywhere in the workspace and copy its contents
-                    DIST_PATH=$(find ${WORKSPACE} -type d -name "dist" | grep -v "node_modules" | head -n 1)
-                    if [ -d "$DIST_PATH" ]; then
-                        sudo cp -r ${DIST_PATH}/* /var/www/yesen-crm/
-                        echo "Frontend deployed successfully from $DIST_PATH!"
+                    if [ -d "${WORKSPACE}/yesen-crm-frontend/dist" ]; then
+                        sudo cp -r ${WORKSPACE}/yesen-crm-frontend/dist/* /var/www/yesen-crm/
+                        echo "Frontend deployed successfully!"
                     else
                         echo "Error: Frontend dist folder not found!"
                         exit 1
